@@ -1,25 +1,46 @@
-# Runtime data
+# Runtime data - NEVER COMMIT
 projects/
 todos/
 shell-snapshots/
 statsig/
-powerline/usage/
+powerline/
+data/
 *.log
 *.lock
 *.backup
 *.tmp
 
+# Archives may contain personal data
+archive/
+
 # Cache
-powerline/locks/
 cache/
+*.cache
 
 # Sensitive
 .env
+.env.*
 secrets/
+config/paths.json
+config/notification_states.json
+
+# Session data
+*.jsonl
+completion.log
 
 # macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
 
 # Temporary
 temp/
 tmp/
+*.swp
+*.swo
+*~
+
+# Personal configurations that shouldn't be shared
+.update.lock
