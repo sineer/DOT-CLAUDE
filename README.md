@@ -1,6 +1,8 @@
-# 🤖 Claude Configuration - Clean & Simple
+# 🤖 DOT-CLAUDE - Clean & Simple Claude Configuration
 
-Your refactored Claude Code setup with git tracking, smart management, and organized structure.
+A refactored Claude Code setup with git tracking, smart management, and organized structure.
+
+> ⚠️ **Privacy Note**: This repo contains configuration templates only. All personal data (projects, todos, paths) is gitignored and never committed.
 
 ## 📁 Directory Structure
 
@@ -213,6 +215,24 @@ git diff
 git remote add origin <your-repo>
 git push -u origin main
 ```
+
+## 🔒 Privacy & Security
+
+### What's Shared (Safe)
+- ✅ Management scripts
+- ✅ Configuration structure  
+- ✅ Hook scripts
+- ✅ Documentation
+- ✅ Empty plugin configs
+
+### What's Never Shared (Gitignored)
+- ❌ `/projects/` - Your conversation transcripts
+- ❌ `/todos/` - Your todo files
+- ❌ `/data/` - All runtime data
+- ❌ `/archive/` - Archived personal data
+- ❌ `config/paths.json` - Your personal project paths
+- ❌ Any `.jsonl` files - Session data
+- ❌ All logs and temp files
 
 ## 🎉 Enjoy Your Clean Setup!
 
