@@ -7,7 +7,7 @@ PARENT_DIR=$(basename "$(dirname "$CWD")")
 FULL_PATH=$(realpath "$CWD" 2>/dev/null || echo "$CWD")
 
 # Path configuration file
-CONFIG_FILE="$HOME/.claude/hooks/path-config.json"
+CONFIG_FILE="$HOME/.claude/config/paths.json"
 
 # Initialize config file if it doesn't exist
 if [ ! -f "$CONFIG_FILE" ]; then

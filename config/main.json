@@ -1,7 +1,7 @@
 {
   "statusLine": {
     "type": "command",
-    "command": "npx @owloops/claude-powerline --style=powerline --theme=light --config=/Users/s1/.claude/config/powerline.json"
+    "command": "npx @owloops/claude-powerline --style=powerline --theme=light --config=/Users/s1/.claude-powerline.json"
   },
   "hooks": {
     "Stop": [
@@ -9,7 +9,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/Users/s1/.claude/scripts/hooks/announce.sh",
+            "command": "/Users/s1/.claude/hooks/auto-announce.sh",
             "timeout": 2
           }
         ]

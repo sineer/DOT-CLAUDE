@@ -1,0 +1,77 @@
+{
+  "theme": "light",
+  "display": {
+    "style": "powerline",
+    "lines": [
+      {
+        "segments": {
+          "directory": {
+            "enabled": true,
+            "showBasename": false
+          },
+          "git": {
+            "enabled": true,
+            "showSha": false,
+            "showWorkingTree": true,
+            "showOperation": true,
+            "showTag": true,
+            "showTimeSinceCommit": true,
+            "showStashCount": true,
+            "showUpstream": false,
+            "showRepoName": false
+          },
+          "model": {
+            "enabled": true
+          },
+          "session": {
+            "enabled": true,
+            "type": "cost",
+            "costSource": "calculated"
+          },
+          "today": {
+            "enabled": false,
+            "type": "both"
+          },
+          "block": {
+            "enabled": true,
+            "type": "time",
+            "burnType": "none"
+          },
+          "context": {
+            "enabled": true,
+            "showPercentageOnly": false
+          },
+          "metrics": {
+            "enabled": true,
+            "showResponseTime": true,
+            "showLastResponseTime": true,
+            "showDuration": true,
+            "showMessageCount": true,
+            "showLinesAdded": true,
+            "showLinesRemoved": true
+          },
+          "version": {
+            "enabled": false
+          }
+        }
+      }
+    ]
+  },
+  "budget": {
+    "session": {
+      "amount": 10,
+      "warningThreshold": 80,
+      "type": "cost"
+    },
+    "today": {
+      "amount": 100,
+      "warningThreshold": 80,
+      "type": "cost"
+    },
+    "block": {
+      "amount": 2000000,
+      "warningThreshold": 80,
+      "type": "tokens"
+    }
+  }
+}

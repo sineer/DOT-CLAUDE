@@ -1,0 +1,242 @@
+#!/bin/bash
+
+# Claude Configuration Manager - Simple & Clean
+# One command to rule them all!
+
+CLAUDE_DIR="$HOME/.claude"
+CONFIG_DIR="$CLAUDE_DIR/config"
+SCRIPTS_DIR="$CLAUDE_DIR/scripts"
+DATA_DIR="$CLAUDE_DIR/data"
+ARCHIVE_DIR="$CLAUDE_DIR/archive"
+
+# Colors for pretty output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
+# Helper functions
+print_success() { echo -e "${GREEN}✅ $1${NC}"; }
+print_error() { echo -e "${RED}❌ $1${NC}"; }
+print_info() { echo -e "${BLUE}ℹ️  $1${NC}"; }
+print_warning() { echo -e "${YELLOW}⚠️  $1${NC}"; }
+
+# Main functions
+status() {
+    echo -e "${CYAN}═══════════════════════════════════════${NC}"
+    echo -e "${CYAN}     Claude Configuration Status${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════${NC}"
+    
+    # Disk usage
+    echo -e "\n${BLUE}💾 Disk Usage:${NC}"
+    TOTAL=$(du -sh "$CLAUDE_DIR" 2>/dev/null | cut -f1)
+    PROJECTS=$(du -sh "$CLAUDE_DIR/projects" 2>/dev/null | cut -f1 || echo "0")
+    TODOS=$(du -sh "$CLAUDE_DIR/todos" 2>/dev/null | cut -f1 || echo "0")
+    ARCHIVES=$(du -sh "$ARCHIVE_DIR" 2>/dev/null | cut -f1 || echo "0")
+    
+    echo "   Total:    $TOTAL"
+    echo "   Projects: $PROJECTS"
+    echo "   Todos:    $TODOS"
+    echo "   Archives: $ARCHIVES"
+    
+    # File counts
+    echo -e "\n${BLUE}📁 File Counts:${NC}"
+    echo "   Projects: $(ls "$CLAUDE_DIR/projects" 2>/dev/null | wc -l | tr -d ' ')"
+    echo "   Todos:    $(ls "$CLAUDE_DIR/todos" 2>/dev/null | wc -l | tr -d ' ')"
+    echo "   Logs:     $(find "$CLAUDE_DIR" -name "*.log" 2>/dev/null | wc -l | tr -d ' ')"
+    
+    # Git status
+    echo -e "\n${BLUE}📝 Git Status:${NC}"
+    cd "$CLAUDE_DIR"
+    if [ -d .git ]; then
+        CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+        if [ "$CHANGES" -gt 0 ]; then
+            echo "   Uncommitted changes: $CHANGES"
+            print_warning "Run 'claude-manage backup' to save changes"
+        else
+            print_success "All changes committed"
+        fi
+    fi
+    echo
+}
+
+clean() {
+    echo -e "${CYAN}🧹 Cleaning Claude Directory${NC}"
+    echo "───────────────────────────────"
+    
+    # Ask for confirmation
+    echo "This will clean:"
+    echo "  • Todos older than 30 days"
+    echo "  • Shell snapshots older than 7 days"
+    echo "  • Logs larger than 10MB"
+    echo "  • All temp files"
+    echo
+    read -p "Continue? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Cleanup cancelled"
+        return
+    fi
+    
+    # Clean old todos
+    OLD_TODOS=$(find "$CLAUDE_DIR/todos" -name "*.json" -mtime +30 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$OLD_TODOS" -gt 0 ]; then
+        find "$CLAUDE_DIR/todos" -name "*.json" -mtime +30 -delete 2>/dev/null
+        print_success "Removed $OLD_TODOS old todos"
+    fi
+    
+    # Clean shell snapshots
+    OLD_SNAPS=$(find "$CLAUDE_DIR/shell-snapshots" -name "*.sh" -mtime +7 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$OLD_SNAPS" -gt 0 ]; then
+        find "$CLAUDE_DIR/shell-snapshots" -name "*.sh" -mtime +7 -delete 2>/dev/null
+        print_success "Removed $OLD_SNAPS old shell snapshots"
+    fi
+    
+    # Clean large logs
+    find "$CLAUDE_DIR" -name "*.log" -size +10M -delete 2>/dev/null
+    
+    # Clean temp files
+    rm -rf "$DATA_DIR/temp/"* 2>/dev/null
+    
+    # Clean empty directories
+    find "$CLAUDE_DIR" -type d -empty -delete 2>/dev/null
+    
+    print_success "Cleanup complete!"
+}
+
+backup() {
+    echo -e "${CYAN}💾 Creating Backup${NC}"
+    echo "──────────────────"
+    
+    cd "$CLAUDE_DIR"
+    
+    # Git backup
+    if [ -d .git ]; then
+        CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+        if [ "$CHANGES" -gt 0 ]; then
+            git add -A
+            git commit -m "Backup: $(date '+%Y-%m-%d %H:%M:%S')
+
+Changes backed up via claude-manage" > /dev/null 2>&1
+            print_success "Git backup created"
+        else
+            print_info "No changes to backup"
+        fi
+    fi
+    
+    # Archive backup (configs only)
+    BACKUP_FILE="$HOME/.claude-backup-$(date +%Y%m%d).tar.gz"
+    tar -czf "$BACKUP_FILE" \
+        -C "$HOME" \
+        .claude/config \
+        .claude/scripts \
+        .claude/settings.json \
+        .claude/.gitignore \
+        .claude/README.md \
+        2>/dev/null
+    
+    print_success "Archive saved to: $BACKUP_FILE"
+}
+
+archive() {
+    echo -e "${CYAN}📦 Archiving Data${NC}"
+    echo "─────────────────"
+    
+    # Check if there's anything to archive
+    PROJECT_COUNT=$(ls "$CLAUDE_DIR/projects" 2>/dev/null | wc -l | tr -d ' ')
+    TODO_COUNT=$(ls "$CLAUDE_DIR/todos" 2>/dev/null | wc -l | tr -d ' ')
+    
+    if [ "$PROJECT_COUNT" -eq 0 ] && [ "$TODO_COUNT" -eq 0 ]; then
+        print_info "Nothing to archive"
+        return
+    fi
+    
+    echo "Found:"
+    echo "  • $PROJECT_COUNT projects"
+    echo "  • $TODO_COUNT todos"
+    echo
+    read -p "Archive all? (y/N) " -n 1 -r
+    echo
+    
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Archive cancelled"
+        return
+    fi
+    
+    # Archive projects
+    if [ "$PROJECT_COUNT" -gt 0 ]; then
+        ARCHIVE_FILE="$ARCHIVE_DIR/projects/projects_$(date +%Y%m%d_%H%M%S).tar.gz"
+        tar -czf "$ARCHIVE_FILE" -C "$CLAUDE_DIR" projects/
+        rm -rf "$CLAUDE_DIR/projects/"*
+        print_success "Projects archived to: $(basename $ARCHIVE_FILE)"
+    fi
+    
+    # Archive todos
+    if [ "$TODO_COUNT" -gt 0 ]; then
+        ARCHIVE_FILE="$ARCHIVE_DIR/todos/todos_$(date +%Y%m%d_%H%M%S).tar.gz"
+        tar -czf "$ARCHIVE_FILE" -C "$CLAUDE_DIR" todos/
+        rm -rf "$CLAUDE_DIR/todos/"*
+        print_success "Todos archived to: $(basename $ARCHIVE_FILE)"
+    fi
+}
+
+paths() {
+    # Delegate to the path management script
+    "$SCRIPTS_DIR/utils/manage-paths.sh" "$@"
+}
+
+test() {
+    echo -e "${CYAN}🔔 Testing Announcement${NC}"
+    echo "──────────────────────"
+    bash "$SCRIPTS_DIR/hooks/announce.sh"
+}
+
+# Main command handler
+case "$1" in
+    status|s)
+        status
+        ;;
+    clean|c)
+        clean
+        ;;
+    backup|b)
+        backup
+        ;;
+    archive|a)
+        archive
+        ;;
+    paths|p)
+        shift
+        paths "$@"
+        ;;
+    test|t)
+        test
+        ;;
+    help|h|"")
+        echo -e "${CYAN}Claude Manager - Simple & Clean${NC}"
+        echo
+        echo "Usage: claude-manage [command]"
+        echo
+        echo "Commands:"
+        echo "  status, s    📊 Show disk usage and file counts"
+        echo "  clean, c     🧹 Clean old files (manual)"
+        echo "  backup, b    💾 Create backup (git + archive)"
+        echo "  archive, a   📦 Archive projects/todos"
+        echo "  paths, p     🛣️  Manage path announcements"
+        echo "  test, t      🔔 Test announcement"
+        echo "  help, h      📖 Show this help"
+        echo
+        echo "Examples:"
+        echo "  claude-manage status      # Check disk usage"
+        echo "  claude-manage clean       # Clean old files"
+        echo "  claude-manage backup      # Save everything"
+        echo "  claude-manage paths list  # Show path configs"
+        ;;
+    *)
+        print_error "Unknown command: $1"
+        echo "Run 'claude-manage help' for usage"
+        exit 1
+        ;;
+esac
