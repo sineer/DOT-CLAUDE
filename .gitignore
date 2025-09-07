@@ -1,0 +1,25 @@
+# Runtime data
+projects/
+todos/
+shell-snapshots/
+statsig/
+powerline/usage/
+*.log
+*.lock
+*.backup
+*.tmp
+
+# Cache
+powerline/locks/
+cache/
+
+# Sensitive
+.env
+secrets/
+
+# macOS
+.DS_Store
+
+# Temporary
+temp/
+tmp/
