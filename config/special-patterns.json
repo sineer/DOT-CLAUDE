@@ -1,0 +1,20 @@
+{
+  "patterns": [
+    {
+      "pattern": "*/docker-openwisp",
+      "exact": true,
+      "name": "D O",
+      "sound": "Glass",
+      "color": "green",
+      "comment": "Docker OpenWISP root directory"
+    },
+    {
+      "pattern": "*/docker-openwisp*/images/openwisp_wifi-login-page",
+      "exact": false,
+      "name": "WIFI",
+      "sound": "Glass", 
+      "color": "green",
+      "comment": "WiFi login page under any docker-openwisp directory"
+    }
+  ]
+}

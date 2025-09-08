@@ -6,14 +6,48 @@ PROJECT_NAME=$(basename "$CWD")
 PARENT_DIR=$(basename "$(dirname "$CWD")")
 FULL_PATH=$(realpath "$CWD" 2>/dev/null || echo "$CWD")
 
-# Path configuration file
+# Path configuration files
 CONFIG_FILE="$HOME/.claude/config/paths.json"
+PATTERNS_FILE="$HOME/.claude/config/special-patterns.json"
 
-# Initialize config file if it doesn't exist
+# Initialize config files if they don't exist
 if [ ! -f "$CONFIG_FILE" ]; then
     mkdir -p "$(dirname "$CONFIG_FILE")"
     echo '{}' > "$CONFIG_FILE"
 fi
+
+if [ ! -f "$PATTERNS_FILE" ]; then
+    mkdir -p "$(dirname "$PATTERNS_FILE")"
+    echo '{"patterns": []}' > "$PATTERNS_FILE"
+fi
+
+# Function to check special patterns
+check_special_patterns() {
+    local path="$1"
+    local patterns=$(jq -r '.patterns[] | "\(.pattern)|\(.exact)|\(.name)|\(.sound)|\(.color)"' "$PATTERNS_FILE" 2>/dev/null)
+    
+    while IFS='|' read -r pattern exact name sound color; do
+        if [ -n "$pattern" ]; then
+            if [ "$exact" = "true" ]; then
+                # Exact match - normalize paths for comparison
+                local normalized_path=$(realpath "$path" 2>/dev/null || echo "$path")
+                local normalized_pattern=$(realpath "${pattern/\*/$(dirname "$path")}" 2>/dev/null || echo "${pattern/\*/$(dirname "$path")}")
+                if [[ "$normalized_path" == "$normalized_pattern" ]]; then
+                    echo "$name|$sound|$color"
+                    return 0
+                fi
+            else
+                # Pattern match
+                if [[ "$path" == $pattern ]]; then
+                    echo "$name|$sound|$color"
+                    return 0
+                fi
+            fi
+        fi
+    done <<< "$patterns"
+    
+    return 1
+}
 
 # Function to get or create config for current path
 get_path_config() {
@@ -78,34 +112,18 @@ get_path_config() {
     fi
 }
 
-# Check for special overrides first
-if [[ "$FULL_PATH" == */u/docker-openwisp* ]] || [[ "$FULL_PATH" == ~/u/docker-openwisp* ]]; then
-    # Special case for docker-openwisp - always say "D O"
-    CONTEXT="D O"
-    SUBPATH="${FULL_PATH#*/u/docker-openwisp}"
-    SUBPATH="${SUBPATH#/}"  # Remove leading slash if present
-    
-    if [[ -z "$SUBPATH" ]]; then
-        SOUND="Glass"
-        COLOR="green"
-    elif [[ "$SUBPATH" == MCP/* ]]; then
-        SOUND="Ping"
-        COLOR="cyan"
-    elif [[ "$SUBPATH" == conductor/* ]]; then
-        SOUND="Pop"
-        COLOR="yellow"
-    else
-        SOUND="Morse"
-        COLOR="blue"
-    fi
+# Check for special patterns first
+SPECIAL_CONFIG=$(check_special_patterns "$FULL_PATH")
+if [ $? -eq 0 ]; then
+    # Use special pattern config
+    IFS='|' read -r CONTEXT SOUND COLOR <<< "$SPECIAL_CONFIG"
 else
     # Get or auto-generate config for this path
     CONFIG=$(get_path_config "$FULL_PATH")
     IFS='|' read -r CONTEXT SOUND COLOR <<< "$CONFIG"
 fi
 
-# Voice announcement with lower volume
-osascript -e "set volume output volume 40"
+# Voice announcement
 say "$CONTEXT ready" &
 
 # System sound
